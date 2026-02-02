@@ -1,0 +1,18 @@
+{
+    "autodeskProduct": "Fusion360",
+    "type": "addin",
+    "id": "com.geekmoniker.autoversionparameter",
+    "author": "Yusuf Mohsinally",
+    "description": {
+        "": "Automatically creates and updates a user parameter 'version_num' that reflects the current file version number. Useful for engraving version info on models."
+    },
+    "version": "1.0.0",
+    "runOnStartup": true,
+    "supportedOS": "windows|mac",
+    "editMode": true,
+    "icons": {
+        "32": "resources/32x32.png",
+        "64": "resources/64x64.png",
+        "128": "resources/128x128.png"
+    }
+}

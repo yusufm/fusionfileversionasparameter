@@ -57,6 +57,8 @@ def ensure_version_param(doc):
         
         params = design.userParameters
         
+        version = 0
+        
         # Check if parameter already exists
         for p in params:
             if p.name == 'version_num':
@@ -65,9 +67,7 @@ def ensure_version_param(doc):
         # Create parameter with version 0 for new files, or current version for existing
         if doc.dataFile:
             version = doc.dataFile.versionNumber
-        else:
-            version = 0
-        
+
         params.add(
             'version_num',
             adsk.core.ValueInput.createByString(str(version)),
@@ -76,11 +76,6 @@ def ensure_version_param(doc):
         )
     except:
         pass
-
-class DocumentCreatedHandler(adsk.core.DocumentEventHandler):
-    """Handles documentCreated event - initializes parameter for brand new files"""
-    def notify(self, args):
-        ensure_version_param(args.document)
 
 class DocumentActivatedHandler(adsk.core.DocumentEventHandler):
     """Handles documentActivated event - initializes parameter for existing files without it"""
@@ -94,22 +89,36 @@ class DocumentSavingHandler(adsk.core.DocumentEventHandler):
             doc = args.document
             if not doc:
                 return
+
+            ensure_version_param(doc)
+
+            existing_param_value = None
+            design = adsk.fusion.Design.cast(
+                doc.products.itemByProductType('DesignProductType')
+            )
+            if design:
+                for p in design.userParameters:
+                    if p.name == 'version_num':
+                        try:
+                            existing_param_value = int(float(p.expression))
+                        except:
+                            existing_param_value = None
+                        break
             
             # Determine target version: the version that will exist after this save completes
             # For new files (version 0), the first save creates version 1
             # For existing files, increment by 1
             if doc.dataFile:
                 current_version = doc.dataFile.versionNumber
-                # If current version is 0, this is the first save, target is 1
-                # Otherwise, target is current + 1
-                if current_version <= 1:
+                if current_version <= 1 and existing_param_value == 0:
+                    target_version = 1
+                elif current_version < 1:
                     target_version = 1
                 else:
                     target_version = current_version + 1
             else:
-                # Brand new unsaved document
                 target_version = 1
-            
+
             update_version_before_save(doc, target_version)
         except:
             pass
