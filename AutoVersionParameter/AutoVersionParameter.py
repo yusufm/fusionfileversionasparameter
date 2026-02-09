@@ -4,6 +4,12 @@ import traceback
 
 handlers = []
 
+
+def log_error(context):
+    app = adsk.core.Application.get()
+    if app:
+        app.log('[AutoVersionParameter] {}: {}'.format(context, traceback.format_exc()))
+
 def update_version_before_save(doc, target_version):
     """
     Update version_num parameter before save, with timeline suppression.
@@ -43,8 +49,8 @@ def update_version_before_save(doc, target_version):
         # Roll back timeline to before our change to hide it from undo
         if timeline and timeline_marker >= 0:
             timeline.markerPosition = timeline_marker
-    except:
-        pass
+    except Exception:
+        log_error('update_version_before_save')
 
 def ensure_version_param(doc):
     """Helper to create version_num parameter if it doesn't exist"""
@@ -74,8 +80,8 @@ def ensure_version_param(doc):
             '',
             'Numeric version for automation'
         )
-    except:
-        pass
+    except Exception:
+        log_error('ensure_version_param')
 
 class DocumentActivatedHandler(adsk.core.DocumentEventHandler):
     """Handles documentActivated event - initializes parameter for existing files without it"""
@@ -101,7 +107,7 @@ class DocumentSavingHandler(adsk.core.DocumentEventHandler):
                     if p.name == 'version_num':
                         try:
                             existing_param_value = int(float(p.expression))
-                        except:
+                        except Exception:
                             existing_param_value = None
                         break
             
@@ -120,8 +126,8 @@ class DocumentSavingHandler(adsk.core.DocumentEventHandler):
                 target_version = 1
 
             update_version_before_save(doc, target_version)
-        except:
-            pass
+        except Exception:
+            log_error('DocumentSavingHandler.notify')
 
 def run(context):
     """Called when Add-In is run"""
@@ -153,5 +159,5 @@ def stop(context):
                     app.documentSaving.remove(handler)
         
         handlers.clear()
-    except:
-        pass
+    except Exception:
+        log_error('stop')
