@@ -8,6 +8,13 @@ Use the code to create a new Add-in. If you enable the plugin, it will create a 
 
 This is good for if you want to add text to your models which reflect the current version of the file.
 
+
+
+https://github.com/user-attachments/assets/87f354b6-2da8-474e-bb0e-0b4c528be71b
+
+![auto_version_text_optimized](https://github.com/user-attachments/assets/04b239cf-b8b7-47f0-8717-639a6a149cc8)
+
+
 ## Install
 
 - **Fusion UI**
