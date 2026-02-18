@@ -1,3 +1,5 @@
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/T6T21UH4X8)
+
 # Fusion 360 file version as parameter
 Fusion 360 add-in to create a number parameter which has the current version of the file. (To use in your model).
 
