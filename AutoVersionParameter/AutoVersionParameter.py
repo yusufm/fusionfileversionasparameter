@@ -83,6 +83,48 @@ def ensure_version_param(doc):
     except Exception:
         log_error('ensure_version_param')
 
+
+def get_existing_version_param_value(doc):
+    """Read the current integer value of version_num if present."""
+    design = adsk.fusion.Design.cast(
+        doc.products.itemByProductType('DesignProductType')
+    )
+    if not design:
+        return None
+
+    for p in design.userParameters:
+        if p.name == 'version_num':
+            try:
+                return int(float(p.expression))
+            except Exception:
+                return None
+
+    return None
+
+
+def get_target_version(doc, existing_param_value):
+    """
+    Determine the version number the document should store during save.
+
+    Fusion's Save As flow can create a new v1 data file while carrying over the
+    source design's version_num parameter. When that happens, keep the copied
+    file at v1 instead of incorrectly jumping to v2.
+    """
+    if not doc.dataFile:
+        return 1
+
+    current_version = doc.dataFile.versionNumber
+    if current_version < 1:
+        return 1
+
+    if current_version == 1 and existing_param_value not in (None, 0, 1):
+        return 1
+
+    if existing_param_value == 0:
+        return 1
+
+    return current_version + 1
+
 class DocumentActivatedHandler(adsk.core.DocumentEventHandler):
     """Handles documentActivated event - initializes parameter for existing files without it"""
     def notify(self, args):
@@ -97,34 +139,8 @@ class DocumentSavingHandler(adsk.core.DocumentEventHandler):
                 return
 
             ensure_version_param(doc)
-
-            existing_param_value = None
-            design = adsk.fusion.Design.cast(
-                doc.products.itemByProductType('DesignProductType')
-            )
-            if design:
-                for p in design.userParameters:
-                    if p.name == 'version_num':
-                        try:
-                            existing_param_value = int(float(p.expression))
-                        except Exception:
-                            existing_param_value = None
-                        break
-            
-            # Determine target version: the version that will exist after this save completes
-            # For new files (version 0), the first save creates version 1
-            # For existing files, increment by 1
-            if doc.dataFile:
-                current_version = doc.dataFile.versionNumber
-                if current_version <= 1 and existing_param_value == 0:
-                    target_version = 1
-                elif current_version < 1:
-                    target_version = 1
-                else:
-                    target_version = current_version + 1
-            else:
-                target_version = 1
-
+            existing_param_value = get_existing_version_param_value(doc)
+            target_version = get_target_version(doc, existing_param_value)
             update_version_before_save(doc, target_version)
         except Exception:
             log_error('DocumentSavingHandler.notify')
